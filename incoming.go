@@ -8,7 +8,20 @@ import (
 type Title struct {
 	s *State
 
-	//bg Anim
+	bg *Anim
+}
+
+func NewTitle(s *State) *Title {
+	bg, err := s.NewAnim(titleData[:], 160)
+	if err != nil {
+		log.Fatalf("Failed to load title BG: %v", err)
+	}
+
+	return &Title{
+		s: s,
+
+		bg: bg,
+	}
 }
 
 func (t *Title) Enter() {
@@ -31,13 +44,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize game state: %v", err)
 	}
-
-	s.AddRoom("title", &Title{
-		s: s,
-
-		//bg: NewAnim(titleData, 140),
-	})
-
+	s.AddRoom("title", NewTitle(s))
 	s.EnterRoom("title")
 
 	fps := time.Tick(time.Second / 60)

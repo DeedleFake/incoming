@@ -35,6 +35,10 @@ func NewState(title string, w, h int) (*State, error) {
 	}, nil
 }
 
+func (s State) NewAnim(data []byte, frameW int) (*Anim, error) {
+	return NewAnim(s.ren, data, frameW)
+}
+
 func (s *State) Update() bool {
 	defer func() {
 		s.frame++
@@ -57,7 +61,7 @@ func (s *State) Update() bool {
 	return true
 }
 
-func (s *State) Frame() int {
+func (s State) Frame() int {
 	return s.frame
 }
 
