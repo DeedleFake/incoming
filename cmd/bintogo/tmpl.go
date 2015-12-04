@@ -12,7 +12,7 @@ const (
 
 package {{.Pkg}}
 
-var {{.Name}}Data = [{{.Size}}]byte{
+var {{.Name}}Data = [...]byte{
 {{range .Data}}	{{printf "0x%02X" .}},
 {{end}}}`
 )
@@ -27,16 +27,6 @@ type Data struct {
 	Pkg  string
 	Name string
 	In   *os.File
-
-	stat os.FileInfo
-}
-
-func (data *Data) Size() int {
-	if data.stat == nil {
-		data.stat, _ = data.In.Stat()
-	}
-
-	return int(data.stat.Size())
 }
 
 func (data *Data) Data() <-chan byte {
