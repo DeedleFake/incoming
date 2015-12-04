@@ -12,7 +12,8 @@ import (
 type Title struct {
 	s *State
 
-	bg *Anim
+	bg      *Anim
+	bgDelay <-chan time.Time
 }
 
 func NewTitle(s *State) *Title {
@@ -24,7 +25,8 @@ func NewTitle(s *State) *Title {
 	return &Title{
 		s: s,
 
-		bg: bg,
+		bg:      bg,
+		bgDelay: time.Tick(time.Second / 20),
 	}
 }
 
@@ -32,6 +34,13 @@ func (t *Title) Enter() {
 }
 
 func (t *Title) Update() {
+	select {
+	case <-t.bgDelay:
+		t.bg.Advance()
+	default:
+	}
+
+	t.bg.Draw(nil)
 }
 
 //go:generate ./bintogo ./images/player.png

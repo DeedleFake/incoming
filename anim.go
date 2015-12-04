@@ -8,6 +8,8 @@ import (
 )
 
 type Anim struct {
+	ren *sdl.Renderer
+
 	image  *sdl.Texture
 	frames []sdl.Rect
 	cur    int
@@ -50,13 +52,15 @@ func NewAnim(ren *sdl.Renderer, data []byte, frameW int) (*Anim, error) {
 	}
 
 	return &Anim{
+		ren: ren,
+
 		image:  img,
 		frames: frames,
 	}, nil
 }
 
-func (anim Anim) Draw(ren *sdl.Renderer, dst *sdl.Rect) error {
-	return ren.Copy(anim.image, &anim.frames[anim.cur], dst)
+func (anim Anim) Draw(dst *sdl.Rect) error {
+	return anim.ren.Copy(anim.image, &anim.frames[anim.cur], dst)
 }
 
 func (anim *Anim) Advance() {
