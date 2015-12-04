@@ -1,1 +1,7 @@
 *.sw[po]
+
+title.go
+player.go
+a1.go
+lose.go
+win.go
