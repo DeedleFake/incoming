@@ -35,7 +35,7 @@ func main() {
 	s.AddRoom("title", &Title{
 		s: s,
 
-		//bg: NewAnim(titleData),
+		//bg: NewAnim(titleData, 140),
 	})
 
 	s.EnterRoom("title")
