@@ -13,8 +13,8 @@ const (
 package {{.Pkg}}
 
 var {{.Name}}Data = [{{.Size}}]byte{
-	{{range .Data}}{{printf "%X" .}}{{end}}
-}`
+{{range .Data}}	{{printf "0x%02X" .}},
+{{end}}}`
 )
 
 var tmpl = new(template.Template)
@@ -24,6 +24,7 @@ func init() {
 }
 
 type Data struct {
+	Pkg  string
 	Name string
 	In   *os.File
 
