@@ -1,12 +1,14 @@
 package main
 
 import (
-	"golang.org/x/exp/shiny/driver/gldriver"
+	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
 	"io"
+	"time"
 
 	"image"
+	"image/color"
 	"image/draw"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -19,10 +21,12 @@ type State struct {
 	rooms map[string]Room
 	room  Room
 
-	s   screen.Screen
-	win screen.Window
+	s    screen.Screen
+	win  screen.Window
+	bnds image.Rectangle
 
 	eventsDone chan struct{}
+	fps        *time.Ticker
 }
 
 func NewState() *State {
@@ -50,18 +54,25 @@ func (s State) LoadAnim(r io.Reader, frameW int) (*Anim, error) {
 		return nil, err
 	}
 
-	sender := make(dummySender)
-	tex.Upload(image.ZP, buf, buf.Bounds(), sender)
-	ev := <-sender
-	if err, ok := ev.(error); ok {
-		return nil, err
-	}
+	tex.Upload(image.ZP, buf, buf.Bounds(), s.win)
 
 	return newAnim(tex, frameW)
 }
 
 func (s *State) Draw(anim *Anim, dst image.Point) {
 	screen.Copy(s.win, dst, anim.image, anim.cur, draw.Over, nil)
+}
+
+func (s *State) Fill(r image.Rectangle, c color.Color) {
+	s.win.Fill(r, c, draw.Over)
+}
+
+func (s *State) Publish() {
+	s.win.Publish()
+}
+
+func (s *State) Bounds() image.Rectangle {
+	return s.bnds
 }
 
 func (s *State) eventsStart() {
@@ -88,12 +99,12 @@ func (s *State) eventsStop() {
 	close(s.eventsDone)
 }
 
-func (s *State) Run(opts *StateOptions, init func(), tick func()) (reterr error) {
+func (s *State) Run(opts *StateOptions, init func() bool) (reterr error) {
 	if opts == nil {
 		opts = &DefaultStateOptions
 	}
 
-	gldriver.Main(func(scrn screen.Screen) {
+	driver.Main(func(scrn screen.Screen) {
 		s.s = scrn
 
 		win, err := scrn.NewWindow(&screen.NewWindowOptions{
@@ -105,15 +116,23 @@ func (s *State) Run(opts *StateOptions, init func(), tick func()) (reterr error)
 			return
 		}
 		s.win = win
+		s.bnds = image.Rect(0, 0, opts.Width, opts.Height)
 
-		init()
+		if !init() {
+			return
+		}
 
 		go s.eventsStart()
 		defer s.eventsStop()
 
+		s.fps = time.NewTicker(time.Second / time.Duration(opts.FPS))
+		defer s.fps.Stop()
+
 		for {
-			tick()
+			s.room.Update()
 			s.frame++
+
+			<-s.fps.C
 		}
 	})
 
@@ -136,20 +155,16 @@ func (s *State) EnterRoom(name string) {
 type StateOptions struct {
 	Width  int
 	Height int
+	FPS    int
 }
 
 var DefaultStateOptions = StateOptions{
 	Width:  640,
 	Height: 480,
+	FPS:    60,
 }
 
 type Room interface {
 	Enter()
 	Update()
-}
-
-type dummySender chan interface{}
-
-func (ds dummySender) Send(ev interface{}) {
-	ds <- ev
 }

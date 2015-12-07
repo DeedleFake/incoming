@@ -68,19 +68,15 @@ func main() {
 	opts := StateOptions{
 		Width:  240,
 		Height: 160,
+		FPS:    60,
 	}
 
-	fps := time.Tick(time.Second / 60)
-	err := s.Run(&opts,
-		func() {
-			s.AddRoom("title", NewTitle(s))
-			s.EnterRoom("title")
-		},
+	err := s.Run(&opts, func() bool {
+		s.AddRoom("title", NewTitle(s))
+		s.EnterRoom("title")
 
-		func() {
-			<-fps
-		},
-	)
+		return true
+	})
 	if err != nil {
 		log.Fatalf("Failed to run game: %v", err)
 	}
