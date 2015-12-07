@@ -1,7 +1,7 @@
 incoming
 ========
 
-incoming is a port of a simple GBA game I made for a class to Go/SDL. "Why?", you ask? Why not?
+incoming is a port of a simple GBA game I made for a class to Go/[Shiny][shiny]. "Why?", you ask? Why not?
 
 Status
 ------
@@ -14,3 +14,5 @@ Later
 -----
 
 - [ ] Rust port.
+
+[shiny]: https://www.golang.org/x/exp/shiny
