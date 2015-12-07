@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"image"
 	"log"
 	"time"
 )
@@ -17,7 +19,7 @@ type Title struct {
 }
 
 func NewTitle(s *State) *Title {
-	bg, err := s.NewAnim(titleData[:], 160)
+	bg, err := s.LoadAnim(bytes.NewReader(titleData[:]), 160)
 	if err != nil {
 		log.Fatalf("Failed to load title BG: %v", err)
 	}
@@ -40,7 +42,7 @@ func (t *Title) Update() {
 	default:
 	}
 
-	t.bg.Draw(nil)
+	t.s.Draw(t.bg, image.ZP)
 }
 
 //go:generate ./bintogo ./images/player.png
@@ -62,15 +64,24 @@ type Win struct {
 //go:generate rm -f ./bintogo
 
 func main() {
-	s, err := NewState("Incoming!", 240, 160)
-	if err != nil {
-		log.Fatalf("Failed to initialize game state: %v", err)
+	s := NewState()
+	opts := StateOptions{
+		Width:  240,
+		Height: 160,
 	}
-	s.AddRoom("title", NewTitle(s))
-	s.EnterRoom("title")
 
 	fps := time.Tick(time.Second / 60)
-	for s.Update() {
-		<-fps
+	err := s.Run(&opts,
+		func() {
+			s.AddRoom("title", NewTitle(s))
+			s.EnterRoom("title")
+		},
+
+		func() {
+			<-fps
+		},
+	)
+	if err != nil {
+		log.Fatalf("Failed to run game: %v", err)
 	}
 }

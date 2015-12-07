@@ -1,7 +1,16 @@
 package main
 
 import (
-	"github.com/veandco/go-sdl2/sdl"
+	"golang.org/x/exp/shiny/driver/gldriver"
+	"golang.org/x/exp/shiny/screen"
+	"golang.org/x/mobile/event/key"
+	"io"
+
+	"image"
+	"image/draw"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 )
 
 type State struct {
@@ -10,55 +19,105 @@ type State struct {
 	rooms map[string]Room
 	room  Room
 
-	win *sdl.Window
-	ren *sdl.Renderer
+	s   screen.Screen
+	win screen.Window
+
+	eventsDone chan struct{}
 }
 
-func NewState(title string, w, h int) (*State, error) {
-	err := sdl.Init(sdl.INIT_EVERYTHING)
-	if err != nil {
-		return nil, err
-	}
-
-	win, ren, err := sdl.CreateWindowAndRenderer(w, h, 0)
-	if err != nil {
-		sdl.Quit()
-		return nil, err
-	}
-	win.SetTitle(title)
-
+func NewState() *State {
 	return &State{
 		rooms: make(map[string]Room),
-
-		win: win,
-		ren: ren,
-	}, nil
+	}
 }
 
-func (s State) NewAnim(data []byte, frameW int) (*Anim, error) {
-	return NewAnim(s.ren, data, frameW)
-}
-
-func (s *State) Update() bool {
-	defer func() {
-		s.frame++
-	}()
-
-	for {
-		ev := sdl.PollEvent()
-		if ev == nil {
-			break
-		}
-
-		switch ev.(type) {
-		case *sdl.QuitEvent:
-			return false
-		}
+func (s State) LoadAnim(r io.Reader, frameW int) (*Anim, error) {
+	img, _, err := image.Decode(r)
+	if err != nil {
+		return nil, err
 	}
 
-	s.room.Update()
+	buf, err := s.s.NewBuffer(img.Bounds().Size())
+	if err != nil {
+		return nil, err
+	}
+	defer buf.Release()
 
-	return true
+	draw.Draw(buf.RGBA(), buf.Bounds(), img, img.Bounds().Min, draw.Src)
+
+	tex, err := s.s.NewTexture(buf.Size())
+	if err != nil {
+		return nil, err
+	}
+
+	sender := make(dummySender)
+	tex.Upload(image.ZP, buf, buf.Bounds(), sender)
+	ev := <-sender
+	if err, ok := ev.(error); ok {
+		return nil, err
+	}
+
+	return newAnim(tex, frameW)
+}
+
+func (s *State) Draw(anim *Anim, dst image.Point) {
+	screen.Copy(s.win, dst, anim.image, anim.cur, draw.Over, nil)
+}
+
+func (s *State) eventsStart() {
+	ev := s.win.Events()
+
+	keys := make(map[key.Code]bool)
+
+	s.eventsDone = make(chan struct{})
+	for {
+		select {
+		case ev := <-ev:
+			switch ev := ev.(type) {
+			case key.Event:
+				keys[ev.Code] = ev.Direction != key.DirRelease
+			}
+
+		case <-s.eventsDone:
+			return
+		}
+	}
+}
+
+func (s *State) eventsStop() {
+	close(s.eventsDone)
+}
+
+func (s *State) Run(opts *StateOptions, init func(), tick func()) (reterr error) {
+	if opts == nil {
+		opts = &DefaultStateOptions
+	}
+
+	gldriver.Main(func(scrn screen.Screen) {
+		s.s = scrn
+
+		win, err := scrn.NewWindow(&screen.NewWindowOptions{
+			Width:  opts.Width,
+			Height: opts.Height,
+		})
+		if err != nil {
+			reterr = err
+			return
+		}
+		s.win = win
+
+		init()
+
+		go s.eventsStart()
+		defer s.eventsStop()
+
+		for {
+			tick()
+			s.frame++
+		}
+	})
+
+	return
 }
 
 func (s State) Frame() int {
@@ -74,7 +133,23 @@ func (s *State) EnterRoom(name string) {
 	s.room.Enter()
 }
 
+type StateOptions struct {
+	Width  int
+	Height int
+}
+
+var DefaultStateOptions = StateOptions{
+	Width:  640,
+	Height: 480,
+}
+
 type Room interface {
 	Enter()
 	Update()
+}
+
+type dummySender chan interface{}
+
+func (ds dummySender) Send(ev interface{}) {
+	ds <- ev
 }
