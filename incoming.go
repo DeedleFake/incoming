@@ -19,7 +19,7 @@ type Title struct {
 }
 
 func NewTitle(s *State) *Title {
-	bg, err := s.LoadAnim(bytes.NewReader(titleData[:]), 160)
+	bg, err := s.LoadAnim(bytes.NewReader(titleData[:]), s.Bounds().Dx())
 	if err != nil {
 		log.Fatalf("Failed to load title BG: %v", err)
 	}
@@ -28,7 +28,7 @@ func NewTitle(s *State) *Title {
 		s: s,
 
 		bg:      bg,
-		bgDelay: time.Tick(time.Second / 20),
+		bgDelay: time.Tick(time.Second / 3),
 	}
 }
 

@@ -26,9 +26,13 @@ func newAnim(tex screen.Texture, frameW int) (*Anim, error) {
 }
 
 func (anim *Anim) Advance() {
-	anim.cur = anim.cur.Add(image.Pt(anim.cur.Dx(), 0))
-	if anim.cur.Min.X >= anim.image.Size().X {
-		anim.cur.Sub(image.Pt(anim.image.Size().X, 0))
+	s := anim.image.Size()
+	w := anim.cur.Dx()
+
+	anim.cur.Min.X += w
+	anim.cur.Max.X += w
+	if anim.cur.Min.X >= s.X {
+		anim.cur.Min.X, anim.cur.Max.X = 0, w
 	}
 }
 
