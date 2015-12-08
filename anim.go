@@ -40,6 +40,10 @@ func (anim Anim) Frames() int {
 	return anim.len
 }
 
+func (anim Anim) Size() image.Point {
+	return anim.image.Size()
+}
+
 type InvalidFrameWidthError struct {
 	ImageW int
 	FrameW int
