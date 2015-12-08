@@ -43,7 +43,7 @@ func (t *Title) Update() {
 	default:
 	}
 
-	if t.s.KeyDown(key.CodeReturnEnter) {
+	if t.s.KeyPress(key.CodeReturnEnter) {
 		t.s.EnterRoom("game")
 		return
 	}

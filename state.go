@@ -96,6 +96,7 @@ func (s *State) eventsStart() {
 	ev := s.win.Events()
 
 	keys := make(map[key.Code]bool)
+	keysCheck := make(map[key.Code]bool)
 
 	s.eventsDone = make(chan struct{})
 	for {
@@ -109,7 +110,19 @@ func (s *State) eventsStart() {
 			}
 
 		case kq := <-s.kqc:
-			kq.r <- keys[kq.code]
+			down := keys[kq.code]
+			if !kq.press {
+				kq.r <- keys[kq.code]
+				continue
+			}
+
+			if down {
+				kq.r <- !keysCheck[kq.code]
+				keysCheck[kq.code] = true
+			} else {
+				kq.r <- false
+				keysCheck[kq.code] = false
+			}
 
 		case <-s.eventsDone:
 			return
@@ -125,7 +138,14 @@ func (s *State) KeyDown(code key.Code) bool {
 	kq := s.kqpool.Get().(*keyQuery)
 	defer s.kqpool.Put(kq)
 
-	return kq.Q(code)
+	return kq.Q(code, false)
+}
+
+func (s *State) KeyPress(code key.Code) bool {
+	kq := s.kqpool.Get().(*keyQuery)
+	defer s.kqpool.Put(kq)
+
+	return kq.Q(code, true)
 }
 
 func (s *State) Run(opts *StateOptions, init func() bool) (reterr error) {
@@ -202,11 +222,14 @@ type keyQuery struct {
 	c chan *keyQuery
 	r chan bool
 
-	code key.Code
+	code  key.Code
+	press bool
 }
 
-func (kq *keyQuery) Q(code key.Code) bool {
+func (kq *keyQuery) Q(code key.Code, press bool) bool {
 	kq.code = code
+	kq.press = press
+
 	kq.c <- kq
 	return <-kq.r
 }
