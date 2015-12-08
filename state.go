@@ -6,6 +6,7 @@ import (
 	"golang.org/x/mobile/event/key"
 	"io"
 	"log"
+	"sync"
 	"time"
 
 	"image"
@@ -28,11 +29,26 @@ type State struct {
 
 	eventsDone chan struct{}
 	fps        *time.Ticker
+
+	kqpool sync.Pool
+	kqc    chan *keyQuery
 }
 
 func NewState() *State {
+	kqc := make(chan *keyQuery)
+
 	return &State{
 		rooms: make(map[string]Room),
+
+		kqpool: sync.Pool{
+			New: func() interface{} {
+				return &keyQuery{
+					c: kqc,
+					r: make(chan bool),
+				}
+			},
+		},
+		kqc: kqc,
 	}
 }
 
@@ -92,6 +108,9 @@ func (s *State) eventsStart() {
 				log.Printf("Event error: %v", ev)
 			}
 
+		case kq := <-s.kqc:
+			kq.r <- keys[kq.code]
+
 		case <-s.eventsDone:
 			return
 		}
@@ -100,6 +119,13 @@ func (s *State) eventsStart() {
 
 func (s *State) eventsStop() {
 	close(s.eventsDone)
+}
+
+func (s *State) KeyDown(code key.Code) bool {
+	kq := s.kqpool.Get().(*keyQuery)
+	defer s.kqpool.Put(kq)
+
+	return kq.Q(code)
 }
 
 func (s *State) Run(opts *StateOptions, init func() bool) (reterr error) {
@@ -170,4 +196,17 @@ var DefaultStateOptions = StateOptions{
 type Room interface {
 	Enter()
 	Update()
+}
+
+type keyQuery struct {
+	c chan *keyQuery
+	r chan bool
+
+	code key.Code
+}
+
+func (kq *keyQuery) Q(code key.Code) bool {
+	kq.code = code
+	kq.c <- kq
+	return <-kq.r
 }

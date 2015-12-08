@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"golang.org/x/mobile/event/key"
 	"image"
 	"log"
 	"time"
@@ -42,6 +43,11 @@ func (t *Title) Update() {
 	default:
 	}
 
+	if t.s.KeyDown(key.CodeReturnEnter) {
+		t.s.EnterRoom("game")
+		return
+	}
+
 	t.s.Draw(t.bg, image.ZP)
 }
 
@@ -49,6 +55,20 @@ func (t *Title) Update() {
 //go:generate ./bintogo ./images/a1.png
 
 type Game struct {
+	s *State
+}
+
+func NewGame(s *State) *Game {
+	return &Game{
+		s: s,
+	}
+}
+
+func (g *Game) Enter() {
+	panic("Not implemented.")
+}
+
+func (g *Game) Update() {
 }
 
 //go:generate ./bintogo ./images/lose.png
@@ -73,6 +93,7 @@ func main() {
 
 	err := s.Run(&opts, func() bool {
 		s.AddRoom("title", NewTitle(s))
+		s.AddRoom("game", NewGame(s))
 		s.EnterRoom("title")
 
 		return true
