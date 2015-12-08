@@ -5,6 +5,7 @@ import (
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
 	"io"
+	"log"
 	"time"
 
 	"image"
@@ -87,6 +88,8 @@ func (s *State) eventsStart() {
 			switch ev := ev.(type) {
 			case key.Event:
 				keys[ev.Code] = ev.Direction != key.DirRelease
+			case error:
+				log.Printf("Event error: %v", ev)
 			}
 
 		case <-s.eventsDone:
