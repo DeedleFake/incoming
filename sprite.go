@@ -22,16 +22,13 @@ func NewSprite(anim Anim, delay time.Duration) (s *Sprite) {
 
 		done: make(chan struct{}),
 	}
-	runtime.SetFinalizer(s, (*Sprite).release)
 
 	go s.animate(delay)
 
 	return
 }
 
-// TODO: This will never get run. The loop in animate maintains a
-// reference to s.
-func (s *Sprite) release() {
+func (s *Sprite) Release() {
 	close(s.done)
 }
 
