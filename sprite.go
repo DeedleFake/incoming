@@ -2,45 +2,73 @@ package main
 
 import (
 	"image"
+	"sync"
 	"time"
 )
 
+// TODO: Delete Sprite and work the animation handling into Anim.
 type Sprite struct {
-	Anim   Anim
-	Bounds image.Rectangle
+	Loc image.Point
+
+	anim  *Anim
+	animM sync.RWMutex
+	delay chan time.Duration
 
 	done chan struct{}
 }
 
-func NewSprite(anim Anim, delay time.Duration) (s *Sprite) {
+func NewSprite(anim *Anim, delay time.Duration) (s *Sprite) {
 	s = &Sprite{
-		Anim: anim,
-		Bounds: image.Rectangle{
-			Min: image.ZP,
-			Max: anim.Size(),
-		},
-
-		done: make(chan struct{}),
+		anim:  anim,
+		delay: make(chan time.Duration),
 	}
 
-	go s.animate(delay)
+	s.StartAnim(delay)
 
 	return
 }
 
-func (s *Sprite) Release() {
-	close(s.done)
+func (s *Sprite) StartAnim(delay time.Duration) {
+	s.StopAnim()
+
+	s.done = make(chan struct{})
+	go s.animate(delay)
+}
+
+func (s *Sprite) AdjustDelay(delay time.Duration) {
+	s.delay <- delay
+}
+
+func (s *Sprite) StopAnim() {
+	if s.done == nil {
+		return
+	}
+
+	select {
+	case <-s.done:
+	default:
+		close(s.done)
+	}
 }
 
 func (s *Sprite) animate(delay time.Duration) {
 	t := time.NewTicker(delay)
 
+	// Prevent potential data race.
+	done := s.done
+
 	for {
 		select {
 		case <-t.C:
-			// TODO: Fix data race.
-			s.Anim.Advance()
-		case <-s.done:
+			s.animM.Lock()
+			s.anim.Advance()
+			s.animM.Unlock()
+
+		case delay := <-s.delay:
+			t.Stop()
+			t = time.NewTicker(delay)
+
+		case <-done:
 			t.Stop()
 			return
 		}
@@ -48,9 +76,13 @@ func (s *Sprite) animate(delay time.Duration) {
 }
 
 func (s *Sprite) Move(x, y int) {
-	s.Bounds.Min.X += x
-	s.Bounds.Min.Y += y
+	s.Loc.X += x
+	s.Loc.Y += y
+}
 
-	s.Bounds.Max.X += x
-	s.Bounds.Max.Y += y
+func (s *Sprite) Draw(state *State) {
+	s.animM.RLock()
+	defer s.animM.RUnlock()
+
+	state.Draw(s.anim, s.Loc)
 }

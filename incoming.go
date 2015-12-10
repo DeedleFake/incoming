@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"golang.org/x/mobile/event/key"
 	"image"
+	"image/color"
 	"log"
 	"time"
 )
@@ -49,6 +50,8 @@ func (t *Title) Update() {
 	}
 
 	t.s.Draw(t.bg, image.ZP)
+
+	t.s.Publish()
 }
 
 //go:generate ./bintogo ./images/player.png
@@ -56,19 +59,32 @@ func (t *Title) Update() {
 
 type Game struct {
 	s *State
+
+	player *Sprite
 }
 
 func NewGame(s *State) *Game {
+	player, err := s.LoadAnim(bytes.NewReader(playerData[:]), 20)
+	if err != nil {
+		log.Fatalf("Failed to load player: %v", err)
+	}
+
 	return &Game{
 		s: s,
+
+		player: NewSprite(player, time.Second/6),
 	}
 }
 
 func (g *Game) Enter() {
-	panic("Not implemented.")
 }
 
 func (g *Game) Update() {
+	g.s.Fill(g.s.Bounds(), color.Black)
+
+	g.player.Draw(g.s)
+
+	g.s.Publish()
 }
 
 //go:generate ./bintogo ./images/lose.png
