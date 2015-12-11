@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -56,6 +57,12 @@ type Game struct {
 
 	player    *Anim
 	playerLoc image.Point
+
+	asteroids []*Anim
+	asteroidb []image.Rectangle
+
+	startFrame int
+	won        bool
 }
 
 func NewGame(s *State) *Game {
@@ -73,10 +80,21 @@ func NewGame(s *State) *Game {
 }
 
 func (g *Game) Enter() {
-	g.player.Start(time.Second / 6)
+	g.startFrame = g.s.Frame()
 }
 
 func (g *Game) Update() {
+	const (
+		Length = 1000
+
+		AsteroidNum    = 3
+		AsteroidChance = 25
+	)
+
+	if g.s.Frame() > g.startFrame+Length {
+		g.won = true
+	}
+
 	delay := time.Second / 6
 	if g.s.KeyDown(key.CodeUpArrow) {
 		g.playerLoc.Y--
@@ -94,11 +112,28 @@ func (g *Game) Update() {
 	}
 	g.player.Start(delay)
 
+	if !g.won && (len(g.asteroids) < AsteroidNum) {
+		ready := true
+		for _, a := range g.asteroidb {
+			if a.Min.Y < a.Dy() {
+				ready = false
+				break
+			}
+		}
+
+		if ready && (rand.Int()%AsteroidChance != 0) {
+			g.asteroidAdd()
+		}
+	}
+
 	g.s.Fill(g.s.Bounds(), color.Black)
 
 	g.s.Draw(g.player, g.playerLoc)
 
 	g.s.Publish()
+}
+
+func (g *Game) asteroidAdd() {
 }
 
 //go:generate ./bintogo ./images/lose.png

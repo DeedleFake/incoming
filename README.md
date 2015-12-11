@@ -7,12 +7,12 @@ Status
 ------
 
 - [X] Basic framework.
-- [ ] Images.
+- [X] Images.
 - [ ] Mechanics.
 
 Later
 -----
 
-- [ ] Rust port.
+- [ ] Rust port?
 
 [shiny]: https://www.golang.org/x/exp/shiny
