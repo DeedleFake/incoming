@@ -58,6 +58,7 @@ type Game struct {
 	player    *Anim
 	playerLoc image.Point
 
+	// TODO: Make an asteroid struct so that only one list is necessary.
 	asteroids []*Anim
 	asteroidb []image.Rectangle
 
@@ -134,6 +135,28 @@ func (g *Game) Update() {
 }
 
 func (g *Game) asteroidAdd() {
+	// TODO: Cache animation and add ability to make copies.
+	a, err := g.s.LoadAnim(bytes.NewReader(a1Data[:]), 16)
+	if err != nil {
+		log.Printf("Failed to load asteroid: %v", err)
+		return
+	}
+
+	g.asteroids = append(g.asteroids, a)
+
+	g.asteroidb = append(g.asteroidb, image.Rect(
+		rand.Intn(g.s.Bounds().Dx()-a.Size().X),
+		-a.Size().Y,
+		a.Size().X,
+		a.Size().Y,
+	))
+}
+
+func (g *Game) asteroidRemove(i int) {
+	g.asteroids[i].Stop()
+	g.asteroids = append(g.asteroids[:i], g.asteroids[i+1:]...)
+
+	g.asteroidb = append(g.asteroidb[:i], g.asteroidb[i+1:]...)
 }
 
 //go:generate ./bintogo ./images/lose.png
