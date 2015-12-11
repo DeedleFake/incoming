@@ -76,8 +76,9 @@ func (s State) LoadAnim(r io.Reader, frameW int) (*Anim, error) {
 	return newAnim(tex, frameW)
 }
 
-func (s *State) Draw(anim *Anim, dst image.Point) {
-	screen.Copy(s.win, dst, anim.image, anim.cur, draw.Over, nil)
+func (s *State) Draw(img Imager, dst image.Point) {
+	image, clip := img.Image()
+	screen.Copy(s.win, dst, image, clip, draw.Over, nil)
 }
 
 func (s *State) Fill(r image.Rectangle, c color.Color) {
@@ -216,6 +217,10 @@ var DefaultStateOptions = StateOptions{
 type Room interface {
 	Enter()
 	Update()
+}
+
+type Imager interface {
+	Image() (screen.Texture, image.Rectangle)
 }
 
 type keyQuery struct {

@@ -29,21 +29,15 @@ func NewTitle(s *State) *Title {
 	return &Title{
 		s: s,
 
-		bg:      bg,
-		bgDelay: time.Tick(time.Second / 3),
+		bg: bg,
 	}
 }
 
 func (t *Title) Enter() {
+	t.bg.Start(time.Second / 3)
 }
 
 func (t *Title) Update() {
-	select {
-	case <-t.bgDelay:
-		t.bg.Advance()
-	default:
-	}
-
 	if t.s.KeyPress(key.CodeReturnEnter) {
 		t.s.EnterRoom("game")
 		return
@@ -60,7 +54,8 @@ func (t *Title) Update() {
 type Game struct {
 	s *State
 
-	player *Sprite
+	player    *Anim
+	playerLoc image.Point
 }
 
 func NewGame(s *State) *Game {
@@ -72,17 +67,36 @@ func NewGame(s *State) *Game {
 	return &Game{
 		s: s,
 
-		player: NewSprite(player, time.Second/6),
+		player:    player,
+		playerLoc: image.Pt(10, 10),
 	}
 }
 
 func (g *Game) Enter() {
+	g.player.Start(time.Second / 6)
 }
 
 func (g *Game) Update() {
+	delay := time.Second / 6
+	if g.s.KeyDown(key.CodeUpArrow) {
+		g.playerLoc.Y--
+	}
+	if g.s.KeyDown(key.CodeDownArrow) {
+		g.playerLoc.Y++
+	}
+	if g.s.KeyDown(key.CodeLeftArrow) {
+		delay = time.Second / 3
+		g.playerLoc.X--
+	}
+	if g.s.KeyDown(key.CodeRightArrow) {
+		delay = time.Second / 12
+		g.playerLoc.X++
+	}
+	g.player.Start(delay)
+
 	g.s.Fill(g.s.Bounds(), color.Black)
 
-	g.player.Draw(g.s)
+	g.s.Draw(g.player, g.playerLoc)
 
 	g.s.Publish()
 }
