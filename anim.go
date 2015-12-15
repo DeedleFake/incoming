@@ -10,7 +10,6 @@ import (
 
 type Anim struct {
 	image screen.Texture
-	len   int
 	cur   image.Rectangle
 
 	m     sync.Mutex
@@ -26,11 +25,20 @@ func newAnim(tex screen.Texture, frameW int) (*Anim, error) {
 
 	return &Anim{
 		image: tex,
-		len:   bnds.Dx() / frameW,
 		cur:   image.Rect(bnds.Min.X, bnds.Min.Y, frameW, bnds.Dy()),
-
-		delay: make(chan time.Duration),
 	}, nil
+}
+
+func (anim *Anim) Copy() *Anim {
+	bnds := anim.image.Bounds()
+
+	return &Anim{
+		image: anim.image,
+		cur: image.Rectangle{
+			Min: bnds.Min,
+			Max: bnds.Min.Add(anim.cur.Size()),
+		},
+	}
 }
 
 func (anim *Anim) advance() {
@@ -47,12 +55,9 @@ func (anim *Anim) advance() {
 	}
 }
 
-func (anim *Anim) animate(delay time.Duration) {
+func (anim *Anim) animate(done <-chan struct{}, delay time.Duration) {
 	t := time.NewTicker(delay)
 	last := delay
-
-	// Prevent potential data race.
-	done := anim.done
 
 	for {
 		select {
@@ -81,8 +86,10 @@ func (anim *Anim) Start(delay time.Duration) {
 		return
 	}
 
+	anim.delay = make(chan time.Duration)
 	anim.done = make(chan struct{})
-	go anim.animate(delay)
+
+	go anim.animate(anim.done, delay)
 }
 
 func (anim *Anim) Stop() {
@@ -100,7 +107,7 @@ func (anim *Anim) Stop() {
 }
 
 func (anim Anim) Frames() int {
-	return anim.len
+	return anim.image.Size().X / anim.cur.Dx()
 }
 
 func (anim Anim) Size() image.Point {

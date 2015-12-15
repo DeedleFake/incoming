@@ -58,6 +58,7 @@ type Game struct {
 	player    *Anim
 	playerLoc image.Point
 
+	asteroid *Anim
 	// TODO: Make an asteroid struct so that only one list is necessary.
 	asteroids []*Anim
 	asteroidb []image.Rectangle
@@ -72,11 +73,18 @@ func NewGame(s *State) *Game {
 		log.Fatalf("Failed to load player: %v", err)
 	}
 
+	asteroid, err := s.LoadAnim(bytes.NewReader(a1Data[:]), 16)
+	if err != nil {
+		log.Fatalf("Failed to load asteroid: %v", err)
+	}
+
 	return &Game{
 		s: s,
 
 		player:    player,
 		playerLoc: image.Pt(10, 10),
+
+		asteroid: asteroid,
 	}
 }
 
@@ -135,12 +143,8 @@ func (g *Game) Update() {
 }
 
 func (g *Game) asteroidAdd() {
-	// TODO: Cache animation and add ability to make copies.
-	a, err := g.s.LoadAnim(bytes.NewReader(a1Data[:]), 16)
-	if err != nil {
-		log.Printf("Failed to load asteroid: %v", err)
-		return
-	}
+	a := g.asteroid.Copy()
+	a.Start(time.Second / time.Duration(5+rand.Intn(2)))
 
 	g.asteroids = append(g.asteroids, a)
 
