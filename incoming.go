@@ -98,6 +98,7 @@ func (g *Game) Update() {
 
 		AsteroidNum    = 3
 		AsteroidChance = 25
+		AsteroidSpeed  = 1
 	)
 
 	if g.s.Frame() > g.startFrame+Length {
@@ -135,9 +136,22 @@ func (g *Game) Update() {
 		}
 	}
 
+	for i := 0; i < len(g.asteroidb); i++ {
+		g.asteroidb[i].Min.Y += AsteroidSpeed
+		g.asteroidb[i].Max.Y += AsteroidSpeed
+		if g.asteroidb[i].Min.Y >= g.s.Bounds().Max.Y {
+			g.asteroidRemove(i)
+			i--
+		}
+	}
+
 	g.s.Fill(g.s.Bounds(), color.Black)
 
 	g.s.Draw(g.player, g.playerLoc)
+
+	for i, a := range g.asteroids {
+		g.s.Draw(a, g.asteroidb[i].Min)
+	}
 
 	g.s.Publish()
 }
