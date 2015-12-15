@@ -12,6 +12,7 @@ type Anim struct {
 	image screen.Texture
 	cur   image.Rectangle
 
+	// TODO: Find a cleaner way to do stuff.
 	m     sync.Mutex
 	delay chan time.Duration
 	done  chan struct{}
@@ -30,6 +31,9 @@ func newAnim(tex screen.Texture, frameW int) (*Anim, error) {
 }
 
 func (anim *Anim) Copy() *Anim {
+	anim.m.Lock()
+	defer anim.m.Unlock()
+
 	bnds := anim.image.Bounds()
 
 	return &Anim{
@@ -106,11 +110,17 @@ func (anim *Anim) Stop() {
 	anim.done = nil
 }
 
-func (anim Anim) Frames() int {
+func (anim *Anim) Frames() int {
+	anim.m.Lock()
+	defer anim.m.Unlock()
+
 	return anim.image.Size().X / anim.cur.Dx()
 }
 
-func (anim Anim) Size() image.Point {
+func (anim *Anim) Size() image.Point {
+	anim.m.Lock()
+	defer anim.m.Unlock()
+
 	return anim.cur.Size()
 }
 
