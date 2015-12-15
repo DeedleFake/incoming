@@ -12,7 +12,7 @@ type Anim struct {
 	image screen.Texture
 	cur   image.Rectangle
 
-	// TODO: Find a cleaner way to do stuff.
+	// TODO: Find a cleaner way to do this.
 	m     sync.Mutex
 	delay chan time.Duration
 	done  chan struct{}

@@ -78,6 +78,10 @@ func (s State) LoadAnim(r io.Reader, frameW int) (*Anim, error) {
 
 func (s State) Draw(img Imager, dst image.Point) {
 	image, clip := img.Image()
+	// TODO: According to the race detector, this is causing a data
+	// race. I'm not sure how that's possible, since everything being
+	// dealt with here should only ever be accessed from one thread.
+	// Maybe it's a Shiny bug?
 	screen.Copy(s.win, dst, image, clip, draw.Over, nil)
 }
 
