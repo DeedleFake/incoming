@@ -68,12 +68,12 @@ type Game struct {
 }
 
 func NewGame(s *State) *Game {
-	player, err := s.LoadAnim(bytes.NewReader(playerData[:]), 20)
+	player, err := s.LoadAnim(bytes.NewReader(playerData[:]), 40)
 	if err != nil {
 		log.Fatalf("Failed to load player: %v", err)
 	}
 
-	asteroid, err := s.LoadAnim(bytes.NewReader(a1Data[:]), 16)
+	asteroid, err := s.LoadAnim(bytes.NewReader(a1Data[:]), 32)
 	if err != nil {
 		log.Fatalf("Failed to load asteroid: %v", err)
 	}
@@ -96,9 +96,11 @@ func (g *Game) Update() {
 	const (
 		Length = 1000
 
+		PlayerSpeed = 2
+
 		AsteroidNum    = 3
 		AsteroidChance = 25
-		AsteroidSpeed  = 1
+		AsteroidSpeed  = 2
 	)
 
 	if g.s.Frame() > g.startFrame+Length {
@@ -107,18 +109,18 @@ func (g *Game) Update() {
 
 	delay := time.Second / 6
 	if g.s.KeyDown(key.CodeUpArrow) {
-		g.playerLoc.Y--
+		g.playerLoc.Y -= PlayerSpeed
 	}
 	if g.s.KeyDown(key.CodeDownArrow) {
-		g.playerLoc.Y++
+		g.playerLoc.Y += PlayerSpeed
 	}
 	if g.s.KeyDown(key.CodeLeftArrow) {
 		delay = time.Second / 3
-		g.playerLoc.X--
+		g.playerLoc.X -= PlayerSpeed
 	}
 	if g.s.KeyDown(key.CodeRightArrow) {
 		delay = time.Second / 12
-		g.playerLoc.X++
+		g.playerLoc.X += PlayerSpeed
 	}
 	g.player.Start(delay)
 
@@ -193,8 +195,8 @@ type Win struct {
 func main() {
 	s := NewState()
 	opts := StateOptions{
-		Width:  240,
-		Height: 160,
+		Width:  480,
+		Height: 320,
 		FPS:    60,
 	}
 

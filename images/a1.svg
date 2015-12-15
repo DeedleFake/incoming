@@ -17,8 +17,8 @@
    inkscape:version="0.91 r13725"
    sodipodi:docname="a1.svg"
    inkscape:export-filename="/home/deedles/devel/go/src/github.com/DeedleFake/incoming/images/a1.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
+   inkscape:export-xdpi="180"
+   inkscape:export-ydpi="180">
   <defs
      id="defs4" />
   <sodipodi:namedview
@@ -28,9 +28,9 @@
      borderopacity="1"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:zoom="11.313708"
-     inkscape:cx="34.761738"
-     inkscape:cy="-1.2275775"
+     inkscape:zoom="5.656854"
+     inkscape:cx="10.592783"
+     inkscape:cy="3.3527186"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -49,7 +49,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
