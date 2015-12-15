@@ -159,15 +159,16 @@ func (g *Game) Update() {
 func (g *Game) asteroidAdd() {
 	a := g.asteroid.Copy()
 	a.Start(time.Second / time.Duration(5+rand.Intn(2)))
-
 	g.asteroids = append(g.asteroids, a)
 
-	g.asteroidb = append(g.asteroidb, image.Rect(
-		rand.Intn(g.s.Bounds().Dx()-a.Size().X),
-		-a.Size().Y,
-		a.Size().X,
-		a.Size().Y,
-	))
+	w := a.Size().X
+
+	x := rand.Intn(g.s.Bounds().Dx() - w)
+	y := -a.Size().Y
+	g.asteroidb = append(g.asteroidb, image.Rectangle{
+		Min: image.Pt(x, y),
+		Max: image.Pt(x+w, 0),
+	})
 }
 
 func (g *Game) asteroidRemove(i int) {
