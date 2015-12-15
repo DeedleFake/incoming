@@ -111,7 +111,7 @@ func (anim Anim) Frames() int {
 }
 
 func (anim Anim) Size() image.Point {
-	return anim.image.Size()
+	return anim.cur.Size()
 }
 
 func (anim *Anim) Image() (screen.Texture, image.Rectangle) {

@@ -76,20 +76,20 @@ func (s State) LoadAnim(r io.Reader, frameW int) (*Anim, error) {
 	return newAnim(tex, frameW)
 }
 
-func (s *State) Draw(img Imager, dst image.Point) {
+func (s State) Draw(img Imager, dst image.Point) {
 	image, clip := img.Image()
 	screen.Copy(s.win, dst, image, clip, draw.Over, nil)
 }
 
-func (s *State) Fill(r image.Rectangle, c color.Color) {
+func (s State) Fill(r image.Rectangle, c color.Color) {
 	s.win.Fill(r, c, draw.Over)
 }
 
-func (s *State) Publish() {
+func (s State) Publish() {
 	s.win.Publish()
 }
 
-func (s *State) Bounds() image.Rectangle {
+func (s State) Bounds() image.Rectangle {
 	return s.bnds
 }
 
@@ -99,6 +99,7 @@ func (s *State) eventsStart() {
 	keys := make(map[key.Code]bool)
 	keysCheck := make(map[key.Code]bool)
 
+	// TODO: This causes a potential data race.
 	s.eventsDone = make(chan struct{})
 	for {
 		select {
@@ -136,6 +137,7 @@ func (s *State) eventsStop() {
 }
 
 func (s *State) KeyDown(code key.Code) bool {
+	// Can you say 'overkill'?
 	kq := s.kqpool.Get().(*keyQuery)
 	defer s.kqpool.Put(kq)
 
