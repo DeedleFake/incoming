@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/DeedleFake/incoming/engine"
 	"golang.org/x/mobile/event/key"
 	"image"
 	"image/color"
@@ -15,13 +16,13 @@ import (
 //go:generate ./bintogo ./images/title.png
 
 type Title struct {
-	s *State
+	s *engine.State
 
-	bg      *Anim
+	bg      *engine.Anim
 	bgDelay <-chan time.Time
 }
 
-func NewTitle(s *State) *Title {
+func NewTitle(s *engine.State) *Title {
 	bg, err := s.LoadAnim(bytes.NewReader(titleData[:]), s.Bounds().Dx())
 	if err != nil {
 		log.Fatalf("Failed to load title BG: %v", err)
@@ -53,21 +54,21 @@ func (t *Title) Update() {
 //go:generate ./bintogo ./images/a1.png
 
 type Game struct {
-	s *State
+	s *engine.State
 
-	player    *Anim
+	player    *engine.Anim
 	playerLoc image.Point
 
-	asteroid *Anim
+	asteroid *engine.Anim
 	// TODO: Make an asteroid struct so that only one list is necessary.
-	asteroids []*Anim
+	asteroids []*engine.Anim
 	asteroidb []image.Rectangle
 
 	startFrame int
 	won        bool
 }
 
-func NewGame(s *State) *Game {
+func NewGame(s *engine.State) *Game {
 	player, err := s.LoadAnim(bytes.NewReader(playerData[:]), 40)
 	if err != nil {
 		log.Fatalf("Failed to load player: %v", err)
@@ -193,8 +194,8 @@ type Win struct {
 //go:generate rm -f ./bintogo
 
 func main() {
-	s := NewState()
-	opts := StateOptions{
+	s := engine.NewState()
+	opts := engine.StateOptions{
 		Width:  480,
 		Height: 320,
 		FPS:    60,
