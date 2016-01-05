@@ -17,6 +17,8 @@ import (
 	_ "image/png"
 )
 
+// State is the main struct of the engine. It keeps track of pretty
+// much everything, as well as running the actual game.
 type State struct {
 	frame int
 
@@ -34,6 +36,7 @@ type State struct {
 	kqc    chan *keyQuery
 }
 
+// NewState initializes a new state.
 func NewState() *State {
 	kqc := make(chan *keyQuery)
 
@@ -52,6 +55,9 @@ func NewState() *State {
 	}
 }
 
+// LoadAnim loads an animation from r with the given frame width. The
+// width of the image loaded must be evenly divisible by the frame
+// width.
 func (s State) LoadAnim(r io.Reader, frameW int) (*Anim, error) {
 	img, _, err := image.Decode(r)
 	if err != nil {
@@ -76,6 +82,7 @@ func (s State) LoadAnim(r io.Reader, frameW int) (*Anim, error) {
 	return newAnim(tex, frameW)
 }
 
+// Draw draws an image onto the screen at the specified point.
 func (s State) Draw(img Imager, dst image.Point) {
 	image, clip := img.Image()
 	// TODO: According to the race detector, this is causing a data
@@ -85,14 +92,18 @@ func (s State) Draw(img Imager, dst image.Point) {
 	screen.Copy(s.win, dst, image, clip, draw.Over, nil)
 }
 
+// Fill fills r with c on the screen.
 func (s State) Fill(r image.Rectangle, c color.Color) {
 	s.win.Fill(r, c, draw.Over)
 }
 
+// Publish updates the screen. Changes to the screen are not
+// guarunteed to actually appear until Publish() has been called.
 func (s State) Publish() {
 	s.win.Publish()
 }
 
+// Bounds returns the screen's bounds.
 func (s State) Bounds() image.Rectangle {
 	return s.bnds
 }
@@ -140,6 +151,8 @@ func (s *State) eventsStop() {
 	close(s.eventsDone)
 }
 
+// KeyDown returns whether or not a specific key is currently being
+// held down.
 func (s *State) KeyDown(code key.Code) bool {
 	// Can you say 'overkill'?
 	kq := s.kqpool.Get().(*keyQuery)
@@ -148,6 +161,9 @@ func (s *State) KeyDown(code key.Code) bool {
 	return kq.Q(code, false)
 }
 
+// KeyPress returns true the first time it is called after the key
+// represented by code is pressed, but returns false for that key
+// until the key is released and then pressed again.
 func (s *State) KeyPress(code key.Code) bool {
 	kq := s.kqpool.Get().(*keyQuery)
 	defer s.kqpool.Put(kq)
@@ -155,6 +171,11 @@ func (s *State) KeyPress(code key.Code) bool {
 	return kq.Q(code, true)
 }
 
+// Run starts the game. It blocks until an unrecoverable error occurs
+// or until the game otherwise exits.
+//
+// Before the game enters the mainloop, init is called. If init
+// returns false, the game exits. init may be nil.
 func (s *State) Run(opts *StateOptions, init func() bool) (reterr error) {
 	if opts == nil {
 		opts = &DefaultStateOptions
@@ -174,7 +195,7 @@ func (s *State) Run(opts *StateOptions, init func() bool) (reterr error) {
 		s.win = win
 		s.bnds = image.Rect(0, 0, opts.Width, opts.Height)
 
-		if !init() {
+		if (init != nil) && !init() {
 			return
 		}
 
@@ -195,37 +216,54 @@ func (s *State) Run(opts *StateOptions, init func() bool) (reterr error) {
 	return
 }
 
+// Frame returns the current frame of the game, with 0 being the
+// initial frame.
 func (s State) Frame() int {
 	return s.frame
 }
 
+// AddRoom adds a room to the game, or overwrites an existing room if
+// one named name already exists.
 func (s *State) AddRoom(name string, room Room) {
 	s.rooms[name] = room
 }
 
+// EnterRoom switches to the room named name, calling its Enter()
+// method.
 func (s *State) EnterRoom(name string) {
 	s.room = s.rooms[name]
 	s.room.Enter()
 }
 
+// StateOptions are options for initializing a State.
 type StateOptions struct {
+	// The width and height of the screen.
 	Width  int
 	Height int
-	FPS    int
+
+	// The target FPS of the game.
+	//
+	// TODO: Make it possible to remove the FPS cap.
+	FPS int
 }
 
+// DefaultStateOptions are the options used if NewState is passed nil.
 var DefaultStateOptions = StateOptions{
 	Width:  640,
 	Height: 480,
 	FPS:    60,
 }
 
+// Room represents a room of the game. This can be almost anything,
+// from a menu, to a level, to credits.
 type Room interface {
 	Enter()
 	Update()
 }
 
+// Imager is a type that can represent itself as a piece of a texture.
 type Imager interface {
+	// Image returns a texture and a clipping rectangle.
 	Image() (screen.Texture, image.Rectangle)
 }
 

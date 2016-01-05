@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+// Anim is an animated image. An Anim can also be a static image by
+// simply having a single frame. An Anim is normally initialized by a
+// State.
 type Anim struct {
 	image screen.Texture
 	cur   image.Rectangle
@@ -30,6 +33,7 @@ func newAnim(tex screen.Texture, frameW int) (*Anim, error) {
 	}, nil
 }
 
+// Copy returns a new Anim which references the same image in memory.
 func (anim *Anim) Copy() *Anim {
 	anim.m.Lock()
 	defer anim.m.Unlock()
@@ -84,6 +88,9 @@ func (anim *Anim) animate(done <-chan struct{}, delay time.Duration) {
 	}
 }
 
+// Start starts the animation, delaying by the specified amount
+// between frames. If the animation has already been started, it
+// adjusts the delay of the running animation.
 func (anim *Anim) Start(delay time.Duration) {
 	if anim.done != nil {
 		anim.delay <- delay
@@ -96,6 +103,8 @@ func (anim *Anim) Start(delay time.Duration) {
 	go anim.animate(anim.done, delay)
 }
 
+// Stop stops the running animation. If the animation isn't currently
+// running, it does nothing.
 func (anim *Anim) Stop() {
 	if anim.done == nil {
 		return
@@ -110,6 +119,7 @@ func (anim *Anim) Stop() {
 	anim.done = nil
 }
 
+// Frames returns the number of frames in the animation.
 func (anim *Anim) Frames() int {
 	anim.m.Lock()
 	defer anim.m.Unlock()
@@ -117,6 +127,7 @@ func (anim *Anim) Frames() int {
 	return anim.image.Size().X / anim.cur.Dx()
 }
 
+// Size returns the size of one frame of the animation.
 func (anim *Anim) Size() image.Point {
 	anim.m.Lock()
 	defer anim.m.Unlock()
