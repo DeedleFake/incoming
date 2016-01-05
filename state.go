@@ -71,7 +71,7 @@ func (s State) LoadAnim(r io.Reader, frameW int) (*Anim, error) {
 		return nil, err
 	}
 
-	tex.Upload(image.ZP, buf, buf.Bounds(), s.win)
+	tex.Upload(image.ZP, buf, buf.Bounds())
 
 	return newAnim(tex, frameW)
 }
