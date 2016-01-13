@@ -59,10 +59,8 @@ type Game struct {
 	player    *engine.Anim
 	playerLoc image.Point
 
-	asteroid *engine.Anim
-	// TODO: Make an asteroid struct so that only one list is necessary.
-	asteroids []*engine.Anim
-	asteroidb []image.Rectangle
+	asteroid  *engine.Anim
+	asteroids []*Asteroid
 
 	startFrame int
 	won        bool
@@ -127,8 +125,8 @@ func (g *Game) Update() {
 
 	if !g.won && (len(g.asteroids) < AsteroidNum) {
 		ready := true
-		for _, a := range g.asteroidb {
-			if a.Min.Y < a.Dy() {
+		for _, a := range g.asteroids {
+			if a.Bounds().Min.Y < a.Bounds().Dy() {
 				ready = false
 				break
 			}
@@ -139,10 +137,9 @@ func (g *Game) Update() {
 		}
 	}
 
-	for i := 0; i < len(g.asteroidb); i++ {
-		g.asteroidb[i].Min.Y += AsteroidSpeed
-		g.asteroidb[i].Max.Y += AsteroidSpeed
-		if g.asteroidb[i].Min.Y >= g.s.Bounds().Max.Y {
+	for i := 0; i < len(g.asteroids); i++ {
+		g.asteroids[i].Move(0, AsteroidSpeed)
+		if g.asteroids[i].Bounds().Min.Y >= g.s.Bounds().Max.Y {
 			g.asteroidRemove(i)
 			i--
 		}
@@ -152,8 +149,8 @@ func (g *Game) Update() {
 
 	g.s.Draw(g.player, g.playerLoc)
 
-	for i, a := range g.asteroids {
-		g.s.Draw(a, g.asteroidb[i].Min)
+	for _, a := range g.asteroids {
+		g.s.Draw(a.Anim(), a.Bounds().Min)
 	}
 
 	g.s.Publish()
@@ -162,23 +159,19 @@ func (g *Game) Update() {
 func (g *Game) asteroidAdd() {
 	a := g.asteroid.Copy()
 	a.Start(time.Second / time.Duration(5+rand.Intn(2)))
-	g.asteroids = append(g.asteroids, a)
 
 	w := a.Size().X
+	s := image.Pt(
+		rand.Intn(g.s.Bounds().Dx()-w),
+		-a.Size().Y,
+	)
 
-	x := rand.Intn(g.s.Bounds().Dx() - w)
-	y := -a.Size().Y
-	g.asteroidb = append(g.asteroidb, image.Rectangle{
-		Min: image.Pt(x, y),
-		Max: image.Pt(x+w, 0),
-	})
+	g.asteroids = append(g.asteroids, NewAsteroid(a, s))
 }
 
 func (g *Game) asteroidRemove(i int) {
-	g.asteroids[i].Stop()
+	g.asteroids[i].Anim().Stop()
 	g.asteroids = append(g.asteroids[:i], g.asteroids[i+1:]...)
-
-	g.asteroidb = append(g.asteroidb[:i], g.asteroidb[i+1:]...)
 }
 
 //go:generate ./bintogo ./images/lose.png
