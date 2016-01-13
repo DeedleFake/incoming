@@ -80,8 +80,11 @@ func NewGame(s *engine.State) *Game {
 	return &Game{
 		s: s,
 
-		player:    player,
-		playerLoc: image.Pt(10, 10),
+		player: player,
+		playerLoc: image.Pt(
+			s.Bounds().Dx()/2-player.Size().X/2,
+			s.Bounds().Dy()/2-player.Size().Y/2,
+		),
 
 		asteroid: asteroid,
 	}
