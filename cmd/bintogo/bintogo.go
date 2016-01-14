@@ -11,6 +11,8 @@ var flags struct {
 	pkg string
 	out string
 	in  string
+
+	defaultOut bool
 }
 
 func init() {
@@ -21,7 +23,7 @@ func init() {
 		flag.PrintDefaults()
 	}
 
-	flag.StringVar(&flags.out, "out", "", "Output file. If blank, it will be the input filename - ext + .go in current dir.")
+	flag.StringVar(&flags.out, "out", "", "Output file. If blank, it will be the input filename - ext + _bin.go in current dir.")
 	flag.StringVar(&flags.pkg, "pkg", "main", "Generated Go file will be in package `name`.")
 
 	flag.Parse()
@@ -33,12 +35,17 @@ func init() {
 	flags.in = flag.Arg(0)
 
 	if flags.out == "" {
-		flags.out = filepath.Base(TrimExt(flags.in)) + ".go"
+		flags.out = filepath.Base(TrimExt(flags.in)) + "_bin.go"
+		flags.defaultOut = true
 	}
 }
 
 func main() {
-	name := filepath.Base(TrimExt(flags.out))
+	name := flags.out
+	if flags.defaultOut {
+		name = flags.in
+	}
+	name = filepath.Base(TrimExt(name))
 
 	fmt.Printf("Reading from %q...\n", flags.in)
 	infile, err := os.Open(flags.in)
@@ -48,10 +55,10 @@ func main() {
 	}
 	defer infile.Close()
 
-	fmt.Printf("Writing to %q...\n", name+".go")
-	outfile, err := os.Create(name + ".go")
+	fmt.Printf("Writing to %q...\n", flags.out)
+	outfile, err := os.Create(flags.out)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to create %q: %v", name+".go", err)
+		fmt.Fprintf(os.Stderr, "Error: Failed to create %q: %v", flags.out, err)
 		os.Exit(1)
 	}
 	defer outfile.Close()

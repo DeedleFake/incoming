@@ -1,7 +1,7 @@
 *.sw[po]
 
-title.go
-player.go
-a1.go
-lose.go
-win.go
+title_bin.go
+player_bin.go
+a1_bin.go
+lose_bin.go
+win_bin.go
