@@ -49,7 +49,7 @@ func (anim *Anim) Copy() *Anim {
 	}
 }
 
-func (anim *Anim) advance() {
+func (anim *Anim) advance(loop bool) {
 	anim.m.Lock()
 	defer anim.m.Unlock()
 
@@ -59,18 +59,26 @@ func (anim *Anim) advance() {
 	anim.cur.Min.X += w
 	anim.cur.Max.X += w
 	if anim.cur.Min.X >= s.X {
+		if !loop {
+			anim.cur.Min.X -= w
+			anim.cur.Max.X -= w
+
+			anim.Stop()
+			return
+		}
+
 		anim.cur.Min.X, anim.cur.Max.X = 0, w
 	}
 }
 
-func (anim *Anim) animate(done <-chan struct{}, delay time.Duration) {
+func (anim *Anim) animate(done <-chan struct{}, delay time.Duration, loop bool) {
 	t := time.NewTicker(delay)
 	last := delay
 
 	for {
 		select {
 		case <-t.C:
-			anim.advance()
+			anim.advance(loop)
 
 		case delay := <-anim.delay:
 			if delay == last {
@@ -91,7 +99,11 @@ func (anim *Anim) animate(done <-chan struct{}, delay time.Duration) {
 // Start starts the animation, delaying by the specified amount
 // between frames. If the animation has already been started, it
 // adjusts the delay of the running animation.
-func (anim *Anim) Start(delay time.Duration) {
+//
+// If loop is true, then the animation will loop; otherwise, it will
+// stop the animation on the last frame. If the animation is already
+// running, loop has no effect.
+func (anim *Anim) Start(delay time.Duration, loop bool) {
 	if anim.done != nil {
 		anim.delay <- delay
 		return
@@ -100,7 +112,7 @@ func (anim *Anim) Start(delay time.Duration) {
 	anim.delay = make(chan time.Duration)
 	anim.done = make(chan struct{})
 
-	go anim.animate(anim.done, delay)
+	go anim.animate(anim.done, delay, loop)
 }
 
 // Stop stops the running animation. If the animation isn't currently

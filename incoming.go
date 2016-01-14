@@ -36,7 +36,7 @@ func NewTitle(s *engine.State) *Title {
 }
 
 func (t *Title) Enter() {
-	t.bg.Start(time.Second / 3)
+	t.bg.Start(time.Second/3, true)
 }
 
 func (t *Title) Update() {
@@ -124,7 +124,9 @@ func (g *Game) Update() {
 		delay = time.Second / 12
 		g.player.Move(PlayerSpeed, 0)
 	}
-	g.player.Anim().Start(delay)
+	g.player.Anim().Start(delay, true)
+
+	playerB := g.player.Bounds()
 
 	if !g.won && (len(g.asteroids) < AsteroidNum) {
 		ready := true
@@ -141,10 +143,19 @@ func (g *Game) Update() {
 	}
 
 	for i := 0; i < len(g.asteroids); i++ {
-		g.asteroids[i].Move(0, AsteroidSpeed)
-		if g.asteroids[i].Bounds().Min.Y >= g.s.Bounds().Max.Y {
+		asteroid := g.asteroids[i]
+
+		asteroid.Move(0, AsteroidSpeed)
+		if asteroid.Bounds().Min.Y >= g.s.Bounds().Max.Y {
 			g.asteroidRemove(i)
+
 			i--
+			continue
+		}
+
+		if asteroid.Bounds().Overlaps(playerB) {
+			g.s.EnterRoom("lose")
+			return
 		}
 	}
 
@@ -161,7 +172,7 @@ func (g *Game) Update() {
 
 func (g *Game) asteroidAdd() {
 	a := g.asteroid.Copy()
-	a.Start(time.Second / time.Duration(5+rand.Intn(2)))
+	a.Start(time.Second/time.Duration(5+rand.Intn(2)), true)
 
 	w := a.Size().X
 	s := image.Pt(
@@ -180,6 +191,29 @@ func (g *Game) asteroidRemove(i int) {
 //go:generate ./bintogo ./images/lose.png
 
 type Lose struct {
+	s *engine.State
+
+	bg *engine.Anim
+}
+
+func NewLose(s *engine.State) *Lose {
+	bg, err := s.LoadAnim(bytes.NewReader(loseData[:]), s.Bounds().Dx())
+	if err != nil {
+		log.Fatal("Failed to load lose background: %v", err)
+	}
+
+	return &Lose{
+		s: s,
+
+		bg: bg,
+	}
+}
+
+func (l *Lose) Enter() {
+	l.bg.Start(5*time.Second/6, false)
+}
+
+func (l *Lose) Update() {
 }
 
 //go:generate ./bintogo ./images/win.png
@@ -200,6 +234,7 @@ func main() {
 	err := s.Run(&opts, func() bool {
 		s.AddRoom("title", NewTitle(s))
 		s.AddRoom("game", NewGame(s))
+		s.AddRoom("lose", NewLose(s))
 		s.EnterRoom("title")
 
 		return true
