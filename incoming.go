@@ -56,8 +56,7 @@ func (t *Title) Update() {
 type Game struct {
 	s *engine.State
 
-	player    *engine.Anim
-	playerLoc image.Point
+	player *Player
 
 	asteroid  *engine.Anim
 	asteroids []*Asteroid
@@ -80,10 +79,11 @@ func NewGame(s *engine.State) *Game {
 	return &Game{
 		s: s,
 
-		player: player,
-		playerLoc: image.Pt(
-			s.Bounds().Dx()/2-player.Size().X/2,
-			s.Bounds().Dy()/2-player.Size().Y/2,
+		player: NewPlayer(player,
+			image.Pt(
+				s.Bounds().Dx()/2-player.Size().X/2,
+				s.Bounds().Dy()/2-player.Size().Y/2,
+			),
 		),
 
 		asteroid: asteroid,
@@ -111,20 +111,20 @@ func (g *Game) Update() {
 
 	delay := time.Second / 6
 	if g.s.KeyDown(key.CodeUpArrow) {
-		g.playerLoc.Y -= PlayerSpeed
+		g.player.Move(0, -PlayerSpeed)
 	}
 	if g.s.KeyDown(key.CodeDownArrow) {
-		g.playerLoc.Y += PlayerSpeed
+		g.player.Move(0, PlayerSpeed)
 	}
 	if g.s.KeyDown(key.CodeLeftArrow) {
 		delay = time.Second / 3
-		g.playerLoc.X -= PlayerSpeed
+		g.player.Move(-PlayerSpeed, 0)
 	}
 	if g.s.KeyDown(key.CodeRightArrow) {
 		delay = time.Second / 12
-		g.playerLoc.X += PlayerSpeed
+		g.player.Move(PlayerSpeed, 0)
 	}
-	g.player.Start(delay)
+	g.player.Anim().Start(delay)
 
 	if !g.won && (len(g.asteroids) < AsteroidNum) {
 		ready := true
@@ -150,7 +150,7 @@ func (g *Game) Update() {
 
 	g.s.Fill(g.s.Bounds(), color.Black)
 
-	g.s.Draw(g.player, g.playerLoc)
+	g.s.Draw(g.player.Anim(), g.player.Loc())
 
 	for _, a := range g.asteroids {
 		g.s.Draw(a.Anim(), a.Bounds().Min)
