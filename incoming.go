@@ -214,6 +214,9 @@ func (l *Lose) Enter() {
 }
 
 func (l *Lose) Update() {
+	l.s.Draw(l.bg, image.ZP)
+
+	l.s.Publish()
 }
 
 //go:generate ./bintogo ./images/win.png
