@@ -109,8 +109,10 @@ func (s State) Bounds() image.Rectangle {
 }
 
 func (s *State) eventsStart() {
-	// TODO: Put event handling back in the main thread, eliminating all
-	// of these potential data races.
+	// TODO: Rewrite this method to work with the new EventQueue better.
+
+	// TODO: This causes a potential data race.
+	s.eventsDone = make(chan struct{})
 
 	ev := make(chan interface{})
 	go func() {
@@ -127,8 +129,6 @@ func (s *State) eventsStart() {
 	keys := make(map[key.Code]bool)
 	keysCheck := make(map[key.Code]bool)
 
-	// TODO: This causes a potential data race.
-	s.eventsDone = make(chan struct{})
 	for {
 		select {
 		case ev := <-ev:
