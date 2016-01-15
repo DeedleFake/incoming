@@ -34,11 +34,7 @@ func (p Player) Bounds() image.Rectangle {
 	// TODO: This is inefficient.
 
 	size := p.anim.Size()
+	x, y := p.loc.X+(size.X/4), p.loc.Y+(size.Y/8)
 
-	return image.Rect(
-		p.loc.X+(size.X/4),
-		p.loc.Y+(size.Y/8),
-		size.X/2,
-		size.Y,
-	)
+	return image.Rect(x, y, x+size.X/2, y+size.Y)
 }
