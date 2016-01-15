@@ -109,7 +109,20 @@ func (s State) Bounds() image.Rectangle {
 }
 
 func (s *State) eventsStart() {
-	ev := s.win.Events()
+	// TODO: Put event handling back in the main thread, eliminating all
+	// of these potential data races.
+
+	ev := make(chan interface{})
+	go func() {
+		for {
+			e := s.win.NextEvent()
+			select {
+			case ev <- e:
+			case <-s.eventsDone:
+				return
+			}
+		}
+	}()
 
 	keys := make(map[key.Code]bool)
 	keysCheck := make(map[key.Code]bool)
