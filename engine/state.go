@@ -4,6 +4,7 @@ import (
 	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
+	"golang.org/x/mobile/event/lifecycle"
 	"io"
 	"log"
 	"sync"
@@ -20,7 +21,8 @@ import (
 // State is the main struct of the engine. It keeps track of pretty
 // much everything, as well as running the actual game.
 type State struct {
-	frame int
+	frame   int
+	closing chan struct{}
 
 	rooms map[string]Room
 	room  Room
@@ -41,7 +43,8 @@ func NewState() *State {
 	kqc := make(chan *keyQuery)
 
 	return &State{
-		rooms: make(map[string]Room),
+		closing: make(chan struct{}),
+		rooms:   make(map[string]Room),
 
 		kqpool: sync.Pool{
 			New: func() interface{} {
@@ -135,6 +138,10 @@ func (s *State) eventsStart() {
 			switch ev := ev.(type) {
 			case key.Event:
 				keys[ev.Code] = ev.Direction != key.DirRelease
+			case lifecycle.Event:
+				if ev.To == lifecycle.StageDead {
+					close(s.closing)
+				}
 			case error:
 				log.Printf("Event error: %v", ev)
 			}
@@ -221,6 +228,12 @@ func (s *State) Run(opts *StateOptions, init func() bool) (reterr error) {
 		for {
 			s.room.Update()
 			s.frame++
+
+			select {
+			case <-s.closing:
+				return
+			default:
+			}
 
 			<-s.fps.C
 		}
