@@ -89,7 +89,7 @@ func (s State) Draw(img Imager, dst image.Point) {
 	// race. I'm not sure how that's possible, since everything being
 	// dealt with here should only ever be accessed from one thread.
 	// Maybe it's a Shiny bug?
-	screen.Copy(s.win, dst, image, clip, draw.Over, nil)
+	s.win.Copy(dst, image, clip, draw.Over, nil)
 }
 
 // Fill fills r with c on the screen.
